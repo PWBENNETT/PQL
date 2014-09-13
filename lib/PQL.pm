@@ -100,10 +100,12 @@ sub execute {
     for my $k (keys %$binds) {
         my $bound = $binds->{ $k };
         if (ref $bound) {
-            $sth->bind_param_inout(":$k" => $bound);
+            (my $name) = $k =~ s/^(?!\:)/:/;
+            $sth->bind_param_inout($name => $bound);
         }
         else {
-            $sth->bind_param(":$k" => $bound);
+            (my $name) = $k =~ s/^(?!\:)/:/;
+            $sth->bind_param($name => $bound);
         }
     }
     $sth->execute();
