@@ -20,7 +20,10 @@ sub connect {
         : ref($_[0]) ? %{%_[0]}
         : @_
         ;
-    return bless \%args => ref($class)||$class;
+    $args{ plan } ||= { };
+    $args{ plan_stats } ||= { };
+    $args{ sth_stats } ||= { };
+    return bless \%args => (ref($class) || $class);
 }
 
 sub study {
@@ -86,10 +89,39 @@ sub render {
     ...
 }
 
+sub prepare {
+    my $self = shift;
+    if (($self->{ sth_stats }->{ last_updated } || 0) < ($self->{ plan_stats }->{ last_updated } || time)) {
+        my $sql = $self->render();
+        eval { $self->{ dbh }->ensure_connection() } or do {
+            if (my $e = $@) {
+                fatal($e);
+            }
+        };
+        $self->{ sth } = $self->{ dbh }->prepare($sql);
+        $self->{ sth_stats }->{ last_updated } = time;
+    }
+    return $self->{ sth };
+}
+
 sub execute {
     my $self = shift;
-    my ($sql, $binds) = $self->render();
-    my $sth = $self->{ dbh }->prepare($sql);
+    my $sth
+        # allow a ready-made STH as the first argument
+        = ref($_[0]) eq 'DBI::st' ? shift(@_)
+        # elsif one was not provided, and our cached one is fresh enough, use it
+        : ($self->{ sth_stats }->{ last_updated } || 0) > ($self->{ plan_stats }->{ last_updated } || 0) ? $self->{ sth }
+        # else, go make (and cache) an STH
+        : $self->prepare()
+        ;
+    my $binds
+        # allow plain list, and treat as arrayref
+        = @_ > 1 ? [ @_ ]
+        # or allow single (possibly ref) scalar
+        : @_ > 0 ? $_[0]
+        # if all else fails, then they'll get what they asked for
+        : undef
+        ;
     unless ($binds) {
         $sth->execute();
         return $sth;
@@ -100,14 +132,9 @@ sub execute {
     }
     for my $k (keys %$binds) {
         my $bound = $binds->{ $k };
-        if (ref $bound) {
-            my $name = ((':')x($k !~ /^:/o)) . $k;
-            $sth->bind_param_inout($name => $bound);
-        }
-        else {
-            my $name = ((':')x($k !~ /^:/o)) . $k;
-            $sth->bind_param($name => $bound);
-        }
+        my $name = ($k !~ /^:/o ? ':' : '') . $k; # add the ':' if it's missing
+        my $method = 'bind_param' . (ref($bound) ? '_inout' : ''); # treat references as read-write arguments, just in case
+        $sth->$method($name => $bound);
     }
     $sth->execute();
     return $sth;
