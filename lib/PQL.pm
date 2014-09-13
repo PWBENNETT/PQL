@@ -25,6 +25,7 @@ sub connect {
 
 sub study {
     my $self = shift;
+    return $self unless $self->{ plan_has_changed };
     $self->{ plan_stats } = PQL::student->study($self->{ plan });
     return $self;
 }
