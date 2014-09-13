@@ -4,7 +4,6 @@ use 5.020;
 use utf8;
 no diagnostics;
 
-use Carp qw( confess );
 use DBI;
 use PQL::Logger;
 
@@ -32,6 +31,7 @@ sub study {
 }
 
 sub optimize {
+    my $self = shift;
     ...
 }
 
@@ -52,7 +52,7 @@ sub explain {
     eval "require Text::Table" or $missing{'Text::Table'} = $@;
     eval "require Number::Format" or $missing{'Number::Format'} = $@;
     if (keys %missing) {
-        confess(
+        fatal(
             "The following modules are needed to explain() a plan, but could not be loaded:\n"
             . join('', map { '  ' . $_ . ': ' . $missing{ $_ } } keys %missing)
         );
@@ -62,13 +62,13 @@ sub explain {
 
 sub tow_graph {
     my $self = shift;
-    eval "require GraphViz2" or confess("The GraphViz2 module is needed to tow_graph() a query, but it could not be loaded: $@");
+    eval "require GraphViz2" or fatal("The GraphViz2 module is needed to tow_graph() a query, but it could not be loaded: $@");
     ...
 }
 
 sub tow_svg {
     my $self = shift;
-    eval "require Image::LibRSVG" or confess("The Image::LibRSVG module is needed to tow_svg() a query, but it could not be loaded: $@");
+    eval "require Image::LibRSVG" or fatal("The Image::LibRSVG module is needed to tow_svg() a query, but it could not be loaded: $@");
     my $gv = $self->tow_graph(@_);
     ...
 }
@@ -81,7 +81,7 @@ sub render {
     eval "require SQL::Abstract" or $missing{'SQL::Abstract'} = $@;
     eval "require SQL::Translator" or $missing{'SQL::Translator'} = $@;
     if (keys %missing) {
-        confess(
+        fatal(
             "The following modules are needed to render() a query as SQL, but could not be loaded:\n"
             . join('', map { '  ' . $_ . ': ' . $missing{ $_ } } keys %missing)
         );
