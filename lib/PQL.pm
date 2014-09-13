@@ -48,28 +48,30 @@ sub explain {
     else {
         %args = @_;
     }
-    my %missing;
-    eval "require Tree::DAG_Node" or $missing{'Tree::DAG_Node'} = $@;
-    eval "require Text::Table" or $missing{'Text::Table'} = $@;
-    eval "require Number::Format" or $missing{'Number::Format'} = $@;
-    if (keys %missing) {
-        fatal(
-            "The following modules are needed to explain() a plan, but could not be loaded:\n"
-            . join('', map { '  ' . $_ . ': ' . $missing{ $_ } } keys %missing)
-        );
-    }
+    _i_need(qw(
+        Tree::DAG_Node
+        Text::Table
+        Number::Format
+    ));
     ...
 }
 
 sub tow_graph {
     my $self = shift;
-    eval "require GraphViz2" or fatal("The GraphViz2 module is needed to tow_graph() a query, but it could not be loaded: $@");
+    _i_need(qw(
+        GraphViz2
+        Number::Format
+    ));
     ...
 }
 
 sub tow_svg {
     my $self = shift;
-    eval "require Image::LibRSVG" or fatal("The Image::LibRSVG module is needed to tow_svg() a query, but it could not be loaded: $@");
+    _i_need(qw(
+        Image::LibRSVG
+        GraphViz2
+        Number::Format
+    ));
     my $gv = $self->tow_graph(@_);
     ...
 }
@@ -79,14 +81,10 @@ sub render {
     my ($dialect) = @_;
     $dialect ||= $self->{ dialect } || 'SQL:2011';
     my %missing;
-    eval "require SQL::Abstract" or $missing{'SQL::Abstract'} = $@;
-    eval "require SQL::Translator" or $missing{'SQL::Translator'} = $@;
-    if (keys %missing) {
-        fatal(
-            "The following modules are needed to render() a query as SQL, but could not be loaded:\n"
-            . join('', map { '  ' . $_ . ': ' . $missing{ $_ } } keys %missing)
-        );
-    }
+    _i_need(qw(
+        SQL::Abstract
+        SQL::Translator
+    ));
     ...
 }
 
@@ -115,6 +113,22 @@ sub execute {
     }
     $sth->execute();
     return $sth;
+}
+
+sub _i_need {
+    my @reqs = @_;
+    my (undef, undef, undef, $caller) = caller(1);
+    my %missing;
+    for my $req (@reqs) {
+        eval "require $req" or $missing{ $req } = $@;
+    }
+    if (keys %missing) {
+        fatal(
+            "The following module list is needed by ${caller}(), but could not be loaded:\n"
+            . join('', map { '  ' . $_ . ': ' . $missing{ $_ } } keys %missing)
+        );
+    }
+    return scalar keys %missing;
 }
 
 1;
