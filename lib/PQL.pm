@@ -8,6 +8,7 @@ use DBI;
 use PQL::Logger;
 
 require PQL::columnset;
+require PQL::criteria;
 require PQL::rowset;
 require PQL::student;
 
