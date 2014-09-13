@@ -25,7 +25,7 @@ sub connect {
 
 sub study {
     my $self = shift;
-    return $self if ($self->{ study_time } || 0) >= ($self->{ plan_change_time } || time);
+    return $self if ($self->{ plan_stats }->{ last_updated } || 0) >= ($self->{ plan }->{ last_updated } || time);
     $self->{ plan_stats } = PQL::student->study($self->{ plan });
     $self->{ study_time } = time;
     return $self;
