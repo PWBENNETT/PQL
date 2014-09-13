@@ -65,7 +65,9 @@ sub tow_graph {
 }
 
 sub tow_svg {
+    my $self = shift;
     eval "require Image::LibRSVG" or confess("The Image::LibRSVG module is needed to tow_svg() a query, but it could not be loaded: $@");
+    my $gv = $self->tow_graph(@_);
     ...
 }
 
