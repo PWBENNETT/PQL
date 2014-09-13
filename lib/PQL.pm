@@ -124,10 +124,10 @@ sub _i_need {
     if (keys %missing) {
         fatal(
             "The following module list is needed by ${caller}(), but could not be loaded:\n"
-            . join('', map { '  ' . $_ . ': ' . $missing{ $_ } } keys %missing)
+            . join('', map { '  ' . $_ . ': ' . $missing{ $_ } } sort { lc $a cmp lc $b } keys %missing)
         );
     }
-    return scalar keys %missing;
+    return @reqs - keys %missing;
 }
 
 1;
