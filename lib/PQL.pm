@@ -5,12 +5,15 @@ use utf8;
 no diagnostics;
 
 use DBI;
+use Exporter qw( import );
 use PQL::Logger;
 
 require PQL::columnset;
 require PQL::criteria;
 require PQL::rowset;
 require PQL::student;
+
+our @EXPORT_OK = qw( bind_param );
 
 sub connect {
     my $class = shift;
@@ -138,6 +141,12 @@ sub execute {
     }
     $sth->execute();
     return $sth;
+}
+
+sub bind_param {
+    shift if ((ref($_[0]) || $_[0]) eq __PACKAGE__);
+    my $name = ($_[0] !~ /^:/o ? ':' : '') . $_[0];
+    return bless \$name => PQL::bind_param;
 }
 
 sub _i_need {
