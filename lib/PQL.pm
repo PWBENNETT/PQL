@@ -102,11 +102,11 @@ sub execute {
     for my $k (keys %$binds) {
         my $bound = $binds->{ $k };
         if (ref $bound) {
-            my $name = (':')x!($k =~ /^:/o) . $k;
+            my $name = ((':')x($k !~ /^:/o)) . $k;
             $sth->bind_param_inout($name => $bound);
         }
         else {
-            my $name = (':')x!($k =~ /^:/o) . $k;
+            my $name = ((':')x($k !~ /^:/o)) . $k;
             $sth->bind_param($name => $bound);
         }
     }
