@@ -119,10 +119,10 @@ sub execute {
         = @_ > 1 ? [ @_ ]
         # or allow single (possibly ref) scalar
         : @_ > 0 ? $_[0]
-        # if all else fails, then they'll get what they asked for
+        # if all else fails, then they'll get what they asked for -- undef() is purely arbitrary but might help debuggers
         : undef
         ;
-    unless ($binds) {
+    unless (@_ > 0) {
         $sth->execute();
         return $sth;
     }
