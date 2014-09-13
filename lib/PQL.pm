@@ -80,7 +80,6 @@ sub render {
     my $self = shift;
     my ($dialect) = @_;
     $dialect ||= $self->{ dialect } || 'SQL:2011';
-    my %missing;
     _i_need(qw(
         SQL::Abstract
         SQL::Translator
@@ -103,11 +102,11 @@ sub execute {
     for my $k (keys %$binds) {
         my $bound = $binds->{ $k };
         if (ref $bound) {
-            (my $name = $k) =~ s/^(?!\:)/:/;
+            my $name = (':')x!($k =~ /^:/o) . $k;
             $sth->bind_param_inout($name => $bound);
         }
         else {
-            (my $name = $k) =~ s/^(?!\:)/:/;
+            my $name = (':')x!($k =~ /^:/o) . $k;
             $sth->bind_param($name => $bound);
         }
     }
