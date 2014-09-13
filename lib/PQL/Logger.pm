@@ -24,7 +24,7 @@ BEGIN {
         *info    = sub { return unless $LOG_VERBOSITY >= 2; say  (ref($_[0]) eq 'CODE' ? $_[0]->() : $_[0]) };
         *warning = sub { return unless $LOG_VERBOSITY >= 3; warn((ref($_[0]) eq 'CODE' ? $_[0]->() : $_[0]) . "\n") };
         *error   = sub { return unless $LOG_VERBOSITY >= 4; warn((ref($_[0]) eq 'CODE' ? $_[0]->() : $_[0]) . "\n") };
-        *fatal   = sub { warn((ref($_[0]) eq 'CODE' ? $_[0]->() : $_[0]) . "\n") };
+        *fatal   = sub { warn((ref($_[0]) eq 'CODE' ? $_[0]->() : $_[0]) . "\n"); exit };
     }
     else {
         my $log = Log::Log4perl->get_logger();
@@ -33,7 +33,7 @@ BEGIN {
         *info = sub { $log->info(@_) };
         *warning = sub { $log->warn(@_) };
         *error = sub { $log->error(@_) };
-        *fatal = sub { $log->fatal(@_) };
+        *fatal = sub { $log->fatal(@_); exit };
     }
 };
 
