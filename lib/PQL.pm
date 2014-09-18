@@ -10,10 +10,21 @@ use PQL::Logger;
 
 require PQL::columnset;
 require PQL::criteria;
+require PQL::resultset; # table ISA resulset, or the other way round. potato, potahto
 require PQL::rowset;
 require PQL::student;
 
-our @EXPORT_OK = qw( bind_param );
+use overload (
+    '""' => 'render',
+    '%{}' => 'table',
+    '&{}' => 'table',
+    '@{}' => sub { fatal('wat') },
+);
+
+our @EXPORT_OK = qw( bind_param unquoted );
+our %EXPORT_TAGS = (
+    ':all' => \@EXPORT_OK,
+);
 
 sub connect {
     my $class = shift;
@@ -146,7 +157,13 @@ sub execute {
 sub bind_param {
     shift if ((ref($_[0]) || $_[0]) eq __PACKAGE__);
     my $name = ($_[0] !~ /^:/o ? ':' : '') . $_[0];
-    return bless \$name => PQL::bind_param;
+    return PQL::bind_param->new($name);
+}
+
+sub unquoted {
+    shift if ((ref($_[0]) || $_[0]) eq __PACKAGE__);
+    my $literal = shift;
+    return bless \$literal => PQL::unquoted;
 }
 
 sub _i_need {
@@ -163,6 +180,51 @@ sub _i_need {
         );
     }
     return @reqs - keys %missing;
+}
+
+1;
+
+package PQL::generic;
+
+use overload (
+    '""' => 'render',
+    fallback => 0,
+);
+
+1;
+
+package PQL::bind_param;
+
+use base qw( PQL::generic );
+
+our %singleton_stash;
+our %bound_values;
+
+sub new {
+    my $class = shift;
+    my ($name) = @_;
+    $singleton_stash{ $name } ||= bless \$name => (ref($class) || $class);
+    return $singleton_stash{ $name };
+}
+
+sub set {
+    my $self = shift;
+    $bound_values{ $$self } = shift;
+    return $self;
+}
+
+sub render {
+    my $self = shift;
+    my $v = $bound_values{ $$self } or fatal("$$self is not bound, can't render() it");
+    return "$v";
+}
+
+package PQL::unquoted;
+
+use base qw( PQL::generic );
+
+sub render {
+    return ${$_[0]};
 }
 
 1;
