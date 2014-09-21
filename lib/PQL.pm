@@ -4,15 +4,13 @@ use 5.020;
 use utf8;
 no diagnostics;
 
-use DBI;
 use Exporter qw( import );
 use PQL::Logger;
 
-require PQL::columnset;
 require PQL::criteria;
-require PQL::resultset; # table ISA resulset, or the other way round. potato, potahto
 require PQL::rowset;
 require PQL::student;
+require PQL::table; # table ISA resulset, or the other way round. potato, potahto
 
 use overload (
     '""' => 'render',
@@ -30,7 +28,7 @@ sub connect {
     my $class = shift;
     my %args
         = (@_ == 1 and ref($_[0]) =~ /^DBI::db/o) ? (dbh => $_[0])
-        : (@_ >= 3) ? (dbh => DBI->connect(@_))
+        : (@_ >= 3) ? do { _i_need(qw( DBI )); (dbh => DBI->connect(@_)) }
         : ref($_[0]) ? %{%_[0]}
         : @_
         ;
