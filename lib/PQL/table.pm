@@ -22,8 +22,30 @@ use overload (
 sub new {
     my $class = shift;
     $class = ref($class) || $class;
-    my (@source) = @_;
-    return bless { source => \@source } => $class;
+    my ($dbh, @tables) = @_;
+    my %symtab;
+    for my $t (@tables) {
+        my $k = ref($t) ? ($t->name) : $t;
+        my @ins = map { lc substr($_, 0, 1) } grep { $_ } split /_/, $k;
+        for my $i (map { $ins[ 0 .. $_ ] } (0 .. $#ins)) {
+            next if $symtab{ $i };
+            $symtab{ $i } = $t;
+            @ins = ();
+            last;
+        }
+        last unless @ins;
+        my $abbn = join('', @ins) . 'a';
+        while (1) {
+            next if $symtab{ $abbn }++;
+            last;
+        }
+    }
+    return bless {
+        dbh => $dbh,
+        name => join('_', keys %symtab),
+        symtab => \%symtab,
+        innards => \@tables,
+    } => $class;
 }
 
 sub select {
