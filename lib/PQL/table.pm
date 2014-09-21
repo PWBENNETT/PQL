@@ -27,6 +27,7 @@ sub new {
     for my $t (@tables) {
         my $k = ref($t) ? ($t->name) : $t;
         my @ins = map { lc substr($_, 0, 1) } grep { $_ } split /_/, $k;
+        @ins = (qw( a )) unless @ins;
         for my $i (map { $ins[ 0 .. $_ ] } (0 .. $#ins)) {
             next if $symtab{ $i };
             $symtab{ $i } = $t;
