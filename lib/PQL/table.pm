@@ -22,10 +22,10 @@ use overload (
 sub new {
     my $class = shift;
     $class = ref($class) || $class;
-    my ($dbh, @tables) = @_;
+    my ($lhs, $type, $rhs) = @_;
     my %symtab;
-    for my $t (@tables) {
-        my $k = ref($t) ? ($t->name) : $t;
+    for my $t (grep { $_ } ($lhs, $rhs)) {
+        my $k = ref($t) ? ($t->{ name }) : $t;
         my @ins = map { lc substr($_, 0, 1) } grep { $_ } split /_/, $k;
         @ins = (qw( a )) unless @ins;
         for my $i (map { $ins[ 0 .. $_ ] } (0 .. $#ins)) {
@@ -42,10 +42,10 @@ sub new {
         }
     }
     return bless {
-        dbh => $dbh,
         name => join('_', keys %symtab),
         symtab => \%symtab,
-        innards => \@tables,
+        (type => $type)x!!($type),
+        innards => [ $lhs, ($rhs)x!!($rhs) ],
     } => $class;
 }
 

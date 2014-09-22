@@ -8,15 +8,13 @@ use Exporter qw( import );
 use PQL::Logger;
 
 require PQL::criteria;
-require PQL::rowset;
 require PQL::student;
 require PQL::table; # table ISA resulset, or the other way round. potato, potahto
 
 use overload (
     '""' => 'render',
-    '%{}' => 'table',
-    '&{}' => 'table',
-    '@{}' => sub { fatal('wat') },
+    '&{}' => 'tables',
+    '@{}' => 'list_tables',
 );
 
 our @EXPORT_OK = qw( bind_param unquoted );
@@ -36,6 +34,23 @@ sub connect {
     $args{ plan_stats } ||= { };
     $args{ sth_stats } ||= { };
     return bless \%args => (ref($class) || $class);
+}
+
+sub tables {
+    my $self = shift;
+    my (@tables) = ref($_[0]) eq 'ARRAY' ? @{$_[0]} : @_;
+    my $lhs;
+    $self->{ tables } ||= [ ];
+    do {
+        $lhs = shift @tables;
+        push @{$self->{ tables }}, PQL::table->new($lhs, (PQL::criteria->full_theta(), $tables[0])x!!(@tables));
+    } while (@tables);
+    return $self;
+}
+
+sub list_tables {
+    my $self = shift;
+    return map { [ $_->{ name }, $_->{ type }, $_->{ innards } ] } @{$self->{ tables }};
 }
 
 sub study {
